@@ -20,6 +20,19 @@ type Reservation struct {
 
 var reservationsCollection *mongo.Collection
 
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func getReservations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	cursor, err := reservationsCollection.Find(context.TODO(), bson.M{})
@@ -83,7 +96,8 @@ func main() {
 	db := client.Database("tradomlab")
 	reservationsCollection = db.Collection("reservations")
 
-	http.HandleFunc("/reservations", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/reservations", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			getReservations(w, r)
 		} else if r.Method == http.MethodPost {
@@ -94,7 +108,7 @@ func main() {
 	})
 
 	log.Println("Starting server on port 3000...")
-	if err := http.ListenAndServe(":3000", nil); err != nil { // Using HTTP
+	if err := http.ListenAndServe(":3000", enableCORS(mux)); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }
