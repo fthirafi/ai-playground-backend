@@ -94,7 +94,7 @@ func main() {
 	})
 
 	log.Println("Starting server on port 3000...")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	if err := http.ListenAndServe(":3000", nil); err != nil { // Using HTTP
 		log.Fatalf("Error starting server: %v", err)
 	}
 }
